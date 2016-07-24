@@ -25,3 +25,9 @@ optional arguments:
   -v, --verbose         output sent message
   --html                send email as HTML
 ```
+
+## Example
+
+```sh
+$ echo 'Hello World!' | ./gmail-send.py -s 'Howdy!' john.smith $(cat john.smith.passwd) max.mustermann@gmail.com
+```
