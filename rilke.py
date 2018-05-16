@@ -1,33 +1,39 @@
 from argparse import ArgumentParser
+from enum import Enum
 from bs4 import BeautifulSoup
 import re
 import requests
 from typing import Iterator
 
-DEFAULT_LANG = "de"
+class Language(Enum):
+    EN = "en"
+    DE = "de"
 
-def cook_soup(url):
+DEFAULT_LANG = Language.DE
+Url = str
+
+def cook_soup(url: Url) -> BeautifulSoup:
     return BeautifulSoup(requests.get(url).text, "lxml")
 
-def base_url(lang=DEFAULT_LANG):
-    return "https://{}.wiktionary.org".format(lang)
+def base_url(lang: Language = DEFAULT_LANG) -> str:
+    return "https://{}.wiktionary.org".format(lang.value)
 
-def entry_url(word, lang=DEFAULT_LANG):
+def entry_url(word: Url, lang: Language = DEFAULT_LANG) -> str:
     return base_url(lang) + "/wiki/" + word
 
-def rhymes_url(entry_url, lang=DEFAULT_LANG):
+def rhymes_url(entry_url: Url, lang: Language = DEFAULT_LANG) -> str:
     soup = cook_soup(entry_url)
     result_url = base_url(lang)
     try:
-        if lang == "de":
+        if lang == Language.DE:
             result_url += soup.find("a", href=re.compile(r"/wiki/Reim:Deutsch:.*"))["href"]
-        elif lang == "en":
+        elif lang == Language.EN:
             result_url += soup.find("a", href=re.compile(r"/wiki/Rhymes:English/.*"))["href"]
         return result_url
     except:
         raise ValueError("Entry at {} not found.".format(entry_url))
 
-def find_rhymes(rhymes_url: str) -> Iterator[str]:
+def find_rhymes(rhymes_url: Url) -> Iterator[str]:
     soup = cook_soup(rhymes_url)
     for li in soup.select("div#content ul > li > a"):
         try:
@@ -41,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--lang", help="the language", choices=["de", "en"], nargs="?", default="de")
     args = parser.parse_args()
 
-    entry_url = entry_url(args.entry, lang=args.lang)
-    rhymes_url = rhymes_url(entry_url, lang=args.lang)
-    for rhyme in find_rhymes(rhymes_url):
+    entry = entry_url(args.entry, lang=Language(args.lang))
+    rhymes = rhymes_url(entry, lang=Language(args.lang))
+    for rhyme in find_rhymes(rhymes):
         print(rhyme)
