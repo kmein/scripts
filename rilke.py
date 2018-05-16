@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 import requests
 import re
@@ -13,7 +14,7 @@ def base_url(lang=DEFAULT_LANG):
 def entry_url(word, lang=DEFAULT_LANG):
     return base_url(lang) + "/wiki/" + word
 
-def find_rhymes_url(entry_url, lang=DEFAULT_LANG):
+def rhymes_url(entry_url, lang=DEFAULT_LANG):
     entry_html = requests.get(entry_url).text
     soup = BeautifulSoup(entry_html, "lxml")
     result_url = base_url(lang)
@@ -35,7 +36,12 @@ def find_rhymes(rhymes_url):
             continue
 
 if __name__ == "__main__":
-    entry_url = entry_url("stabil", lang="de")
-    rhymes_url = find_rhymes_url(entry_url, lang="de")
+    parser = ArgumentParser(description="Find your rhyme in no time")
+    parser.add_argument("entry", metavar="WORD", type=str, help="the word to rhyme")
+    parser.add_argument("-l", "--lang", help="the language", choices=["de", "en"], nargs="?", default="de")
+    args = parser.parse_args()
+
+    entry_url = entry_url(args.entry, lang=args.lang)
+    rhymes_url = rhymes_url(entry_url, lang=args.lang)
     for rhyme in find_rhymes(rhymes_url):
         print(rhyme)
