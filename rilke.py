@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
 from bs4 import BeautifulSoup
-import requests
 import re
+import requests
+from typing import Iterator
 
 DEFAULT_LANG = "de"
 
@@ -18,15 +19,16 @@ def rhymes_url(entry_url, lang=DEFAULT_LANG):
     entry_html = requests.get(entry_url).text
     soup = BeautifulSoup(entry_html, "lxml")
     result_url = base_url(lang)
-    if lang == "de":
-        result_url += soup.find("a", href=re.compile(r"/wiki/Reim:Deutsch:.*"))["href"]
-    elif lang == "en":
-        result_url += soup.find("a", href=re.compile(r"/wiki/Rhymes:English/.*"))["href"]
-    else:
-        pass
-    return result_url
+    try:
+        if lang == "de":
+            result_url += soup.find("a", href=re.compile(r"/wiki/Reim:Deutsch:.*"))["href"]
+        elif lang == "en":
+            result_url += soup.find("a", href=re.compile(r"/wiki/Rhymes:English/.*"))["href"]
+        return result_url
+    except:
+        raise ValueError("Entry at {} not found.".format(entry_url))
 
-def find_rhymes(rhymes_url):
+def find_rhymes(rhymes_url: str) -> Iterator[str]:
     rhymes_html = requests.get(rhymes_url).text
     soup = BeautifulSoup(rhymes_html, "lxml")
     for li in soup.select("div#content ul > li > a"):
