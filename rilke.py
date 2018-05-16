@@ -16,8 +16,7 @@ def entry_url(word, lang=DEFAULT_LANG):
     return base_url(lang) + "/wiki/" + word
 
 def rhymes_url(entry_url, lang=DEFAULT_LANG):
-    entry_html = requests.get(entry_url).text
-    soup = BeautifulSoup(entry_html, "lxml")
+    soup = cook_soup(entry_url)
     result_url = base_url(lang)
     try:
         if lang == "de":
@@ -29,8 +28,7 @@ def rhymes_url(entry_url, lang=DEFAULT_LANG):
         raise ValueError("Entry at {} not found.".format(entry_url))
 
 def find_rhymes(rhymes_url: str) -> Iterator[str]:
-    rhymes_html = requests.get(rhymes_url).text
-    soup = BeautifulSoup(rhymes_html, "lxml")
+    soup = cook_soup(rhymes_url)
     for li in soup.select("div#content ul > li > a"):
         try:
             yield li.text
