@@ -3,25 +3,25 @@ from enum import Enum
 from bs4 import BeautifulSoup
 import re
 import requests
-from typing import Iterator
+from typing import Iterator, NewType
 
 class Language(Enum):
     EN = "en"
     DE = "de"
 
 DEFAULT_LANG = Language.DE
-Url = str
+Url = NewType("Url", str)
 
 def cook_soup(url: Url) -> BeautifulSoup:
     return BeautifulSoup(requests.get(url).text, "lxml")
 
-def base_url(lang: Language = DEFAULT_LANG) -> str:
-    return "https://{}.wiktionary.org".format(lang.value)
+def base_url(lang: Language = DEFAULT_LANG) -> Url:
+    return Url("https://{}.wiktionary.org".format(lang.value))
 
-def entry_url(word: Url, lang: Language = DEFAULT_LANG) -> str:
-    return base_url(lang) + "/wiki/" + word
+def entry_url(word: str, lang: Language = DEFAULT_LANG) -> Url:
+    return Url(base_url(lang) + "/wiki/" + word)
 
-def rhymes_url(entry_url: Url, lang: Language = DEFAULT_LANG) -> str:
+def rhymes_url(entry_url: Url, lang: Language = DEFAULT_LANG) -> Url:
     soup = cook_soup(entry_url)
     result_url = base_url(lang)
     try:
