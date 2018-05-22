@@ -57,7 +57,7 @@ class Text:
             title=self.title,
             maybe_author=self.author + ": " if with_author else "",
             maybe_type=" ("+self.type+")" if with_type else "",
-            content="\n".join(line + "\\" if line else line for line in self.content.splitlines()))
+            content="\n".join(line + "\\" if line else "" for line in self.content.splitlines()))
 
 
 if __name__ == "__main__":
