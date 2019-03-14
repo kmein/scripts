@@ -51,27 +51,27 @@ journeys() {
 }
 
 case $1 in
-  station)
+  find)
     shift
     station "$@"
   ;;
-  departures:id)
+  d:id|dep:id|departures:id)
     shift
     departures "$@"
   ;;
-  journeys:id)
+  j:id|jny:id|journey:id)
     shift
     departures "$@"
   ;;
-  journeys)
+  j|jny|journey)
     shift
     journeys "$(find_id "$1")" "$(find_id "$2")"
   ;;
-  departures)
+  d|dep|departures)
     shift
     departures "$(find_id "$1")"
   ;;
-  --help)
-    echo "Usage: $0 [station QUERY | journeys QUERY QUERY | departures QUERY]"
+  *)
+    echo "Usage: $0 [find STATION NAME | jny ORIGIN DESTINATION | dep QUERY]"
   ;;
 esac
