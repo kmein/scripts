@@ -1,0 +1,58 @@
+#!/bin/sh
+
+kv_GET () {
+  route=$1
+  shift
+  curl -s "https://www.keinverlag.de$route" "$@" | iconv -f latin1 -t utf8
+}
+
+kv_author_id () {
+  if [ $# -ne 1 ]; then
+    echo Please call kv_author_id with an author name. >/dev/stderr
+    exit 1
+  fi
+
+  author_name=$1
+
+  kv_GET "/$author_name.kv" \
+    | sed -n 's/.*autor=\([0-9]\+\).*/\1/p' \
+    | head -1
+}
+
+kv_text () {
+  if [ $# -ne 1 ]; then
+    echo Please call kv_text with a text ID. >/dev/stderr
+    exit 1
+  fi
+
+  text_id=$1
+
+  kv_GET "/$text_id.text" \
+    | sed -n '/<h1>/,/<!-- Kommentarbox -->/p' \
+    | pandoc -f html -t plain
+}
+
+kv_author_texts () {
+  if [ $# -ne 1 ]; then
+    echo Please call kv_author_texts with an author ID. >/dev/stderr
+    exit 1
+  fi
+
+  author_id=$1
+
+  kv_GET '/autorentexte.php' -d sortby=datum -d start=0 -d limit=10000 -d autor="$author_id" \
+    | sed -n 's/.*<a href="\([0-9]\+\)\.text">.*/\1/p'
+}
+
+case $1 in
+  text)
+    shift
+    kv_text "$@";;
+  author)
+    shift
+    for text_id in $(kv_author_texts "$(kv_author_id "$@")"); do
+      kv_text "$text_id"
+    done ;;
+  *)
+    echo >/dev/stderr "Usage: $0 text|author ID"
+esac
