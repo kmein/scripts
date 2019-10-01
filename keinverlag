@@ -1,10 +1,9 @@
 #!/bin/sh
 
-kv_GET () {
-  route=$1
-  shift
-  curl -s "https://www.keinverlag.de$route" "$@" | iconv -f latin1 -t utf8
-}
+alias to_utf8='iconv -f latin1 -t utf8'
+alias curl_GET='curl -X GET -s -G'
+
+BASE_URL=https://www.keinverlag.de
 
 kv_author_id () {
   if [ $# -ne 1 ]; then
@@ -14,7 +13,8 @@ kv_author_id () {
 
   author_name=$1
 
-  kv_GET "/$author_name.kv" \
+  curl_GET "$BASE_URL/$author_name.kv" \
+    | to_utf8 \
     | sed -n 's/.*autor=\([0-9]\+\).*/\1/p' \
     | head -1
 }
@@ -27,7 +27,8 @@ kv_text () {
 
   text_id=$1
 
-  kv_GET "/$text_id.text" \
+  curl_GET "$BASE_URL/$text_id.text" \
+    | to_utf8 \
     | sed -n '/<h1>/,/<!-- Kommentarbox -->/p' \
     | sed 's/<h3>.\+<\/h3>//g' \
     | pandoc -f html -t plain
@@ -41,8 +42,9 @@ kv_author_texts () {
 
   author_id=$1
 
-  kv_GET '/autorentexte.php' -d sortby=datum -d start=0 -d limit=10000 -d autor="$author_id" \
-    | sed -n 's/.*<a href="\([0-9]\+\)\.text">.*/\1/p'
+  curl_GET "$BASE_URL/autorentexte.php" -d sortby=tnr -d start=0 -d limit=10000 -d autor="$author_id" \
+    | to_utf8 \
+    | sed -n 's/.*<li><a href="\([0-9]\+\)\.text">.*/\1/p'
 }
 
 case $1 in
@@ -51,7 +53,7 @@ case $1 in
     kv_text "$@";;
   author)
     shift
-    for text_id in $(kv_author_texts "$(kv_author_id "$@")"); do
+    for text_id in $(kv_author_texts "$(kv_author_id "$@")" | uniq); do
       kv_text "$text_id"
     done ;;
   *)
