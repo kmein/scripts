@@ -29,6 +29,7 @@ kv_text () {
 
   kv_GET "/$text_id.text" \
     | sed -n '/<h1>/,/<!-- Kommentarbox -->/p' \
+    | sed 's/<h3>.\+<\/h3>//g' \
     | pandoc -f html -t plain
 }
 
