@@ -2,12 +2,12 @@
 import itertools
 import subprocess
 
-from PyDictionary import PyDictionary
+# from PyDictionary import PyDictionary
 
-dictionary = PyDictionary()
-
-def translate_en_de(word):
-    return dictionary.translate(word, "de")
+# dictionary = PyDictionary()
+# 
+# def translate_en_de(word):
+#     return dictionary.translate(word, "de")
 
 def pronunciation(word, lang="de"):
     command = ["espeak", "-x", "-q", "-v", lang, word]
@@ -20,5 +20,5 @@ def is_rhyme(word1, word2, lang="de"):
 
 if __name__ == "__main__":
     print(pronunciation("hallo welt"))
-    print(translate_en_de("woe"))
+    # print(translate_en_de("woe"))
     print(is_rhyme("welt", "geld"))
