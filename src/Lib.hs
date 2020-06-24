@@ -1,12 +1,16 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE LambdaCase #-}
 module Lib
   ( someFunc
   )
 where
+
+import           Phonology
+import           Util                           ( replaceSublist )
+
 import           Control.Monad                  ( forM_ )
+import           Data.List                      ( zip3 )
+
 {-
 import           Data.Void
 import qualified Text.Megaparsec               as Parsec
@@ -43,112 +47,28 @@ parseRoot = () <$ do
 -}
 
 
-data Manner = Tenuis | Media | MediaAspirata
-  deriving (Show, Eq)
-
-data Place = Labial | Dental | Palatal | Velar | Labiovelar
-  deriving (Show, Eq)
-
-data Phoneme
-  = E | O | A | E_ | O_ | A_
-  | I | U | N | M | R | L
-  | P | B | Bh | T | D | Dh | Kj | Gj | Gjh | K | G | Gh | Kw | Gw | Gwh | S | H1 | H2 | H3 | H
-  deriving (Eq, Ord)
-
-instance Show Phoneme where
-  show = \case
-    E   -> "e"
-    O   -> "o"
-    A   -> "a"
-    E_  -> "ē"
-    O_  -> "ō"
-    A_  -> "ā"
-    I   -> "i"
-    U   -> "u"
-    N   -> "n"
-    M   -> "m"
-    R   -> "r"
-    L   -> "l"
-    P   -> "p"
-    B   -> "b"
-    Bh  -> "bh"
-    T   -> "t"
-    D   -> "d"
-    Dh  -> "dh"
-    Kj  -> "ḱ"
-    Gj  -> "ǵ"
-    Gjh -> "ǵh"
-    K   -> "k"
-    G   -> "g"
-    Gh  -> "gh"
-    Kw  -> "kʷ"
-    Gw  -> "gʷ"
-    Gwh -> "gʷh"
-    S   -> "s"
-    H1  -> "h₁"
-    H2  -> "h₂"
-    H3  -> "h₃"
-    H   -> "H"
-
-data FeatureSet
-  = Vowel
-  | Resonant
-  | Plosive { manner :: Manner, place :: Place }
-  | Sibilant
-  | Laryngeal
-  deriving (Show, Eq)
-
-isPlosive :: FeatureSet -> Bool
-isPlosive (Plosive _ _) = True
-isPlosive _             = False
-
-features :: Phoneme -> FeatureSet
-features phoneme
-  | phoneme == S = Sibilant
-  | phoneme `elem` [E, O, A, E_, O_, A_] = Vowel
-  | phoneme `elem` [H1, H2, H3, H] = Laryngeal
-  | phoneme `elem` [I, U, N, M, R, L] = Resonant
-  | otherwise = Plosive
-    { manner = if
-                 | phoneme `elem` [P, T, K, Kj, Kw]      -> Tenuis
-                 | phoneme `elem` [B, D, G, Gj, Gw]      -> Media
-                 | phoneme `elem` [Bh, Dh, Gh, Gjh, Gwh] -> MediaAspirata
-    , place  = if
-                 | phoneme `elem` [P, B, Bh]    -> Labial
-                 | phoneme `elem` [T, D, Dh]    -> Dental
-                 | phoneme `elem` [Kj, Gj, Gjh] -> Palatal
-                 | phoneme `elem` [K, G, Gh]    -> Velar
-                 | phoneme `elem` [Kw, Gw, Gwh] -> Labiovelar
-    }
-
 
 syllabify :: [Phoneme] -> [Bool]
-syllabify = foldr isSonant []
+syllabify = replaceSublist [True, True] [True, False]  -- replace VV by VC
+                                                      . foldr isSonant []
  where
   hasToBeSyllabic p = features p == Vowel
   canBeSyllabic p = features p `elem` [Vowel, Resonant, Laryngeal]
   isSonant current xs = case xs of
-    []                   -> [hasToBeSyllabic current] -- last phoneme in word
+    []                   -> [canBeSyllabic current] -- make last phoneme in word syllabic
     previousIsSonant : _ -> if previousIsSonant
       then hasToBeSyllabic current : xs -- only vowels are sonant, the rest can be consonantal
       else canBeSyllabic current : xs -- make syllabic if previous is not syllabic
 
-showSyllabic :: Phoneme -> Bool -> String
-showSyllabic phoneme syllabic = case (phoneme, syllabic) of
-  (I , False) -> "y"
-  (U , False) -> "w"
-  (N , True ) -> "ṇ"
-  (M , True ) -> "ṃ"
-  (R , True ) -> "ṛ"
-  (L , True ) -> "ḷ"
-  (H1, True ) -> "ə₁"
-  (H2, True ) -> "ə₂"
-  (H3, True ) -> "ə₃"
-  (H , True ) -> "ə"
-  _           -> show phoneme
 
-printSyllabified ps =
-  putStr (concatMap show ps) >> putChar ' ' >> print (syllabify ps)
+syllableCores :: [Phoneme] -> [Bool]
+syllableCores = localMax . (++ [0]) . ([0] ++) . map (sonority . features)
+ where
+  localMax xs = map project $ zip3 xs (tail xs) (drop 2 xs)
+    where project (x, y, z) = x <= y && y >= z
+
+-- chunkSyllables :: [Bool] -> [[Bool]]
+-- chunkSyllables = _
 
 someFunc :: IO ()
 someFunc = do
@@ -171,6 +91,11 @@ someFunc = do
         , [N, D, R, Kj, T, O, S]
         , [U, N, T, O, S]
         , [D, U, I, D, Kj, M, T]
+        , [Kj, L, U, Dh, I]
+        , [H1, N, E, U, N]
+        , [H2, U, E, H1, N, T, O, S]
         ]
-  forM_ pieLines
-    $ \line -> putStrLn $ concat $ zipWith showSyllabic line (syllabify line)
+  forM_ pieLines $ \line -> do
+    putStr $ concatMap show line
+    putChar ' '
+    putStrLn $ concat $ zipWith showSyllabic line (syllabify line)
