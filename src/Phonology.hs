@@ -97,9 +97,9 @@ showSyllabic phoneme syllabic = case (phoneme, syllabic) of
   (M , True ) -> "ṃ"
   (R , True ) -> "ṛ"
   (L , True ) -> "ḷ"
-  (H1, True ) -> "ə₁"
-  (H2, True ) -> "ə₂"
-  (H3, True ) -> "ə₃"
-  (H , True ) -> "ə"
+  -- (H1, True ) -> "ə₁"
+  -- (H2, True ) -> "ə₂"
+  -- (H3, True ) -> "ə₃"
+  -- (H , True ) -> "ə"
   _           -> show phoneme
 

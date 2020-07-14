@@ -53,7 +53,7 @@ syllabify = replaceSublist [True, True] [True, False]  -- replace VV by VC
                                                       . foldr isSonant []
  where
   hasToBeSyllabic p = features p == Vowel
-  canBeSyllabic p = features p `elem` [Vowel, Resonant, Laryngeal]
+  canBeSyllabic p = features p `elem` [Vowel, Resonant]
   isSonant current xs = case xs of
     []                   -> [canBeSyllabic current] -- make last phoneme in word syllabic
     previousIsSonant : _ -> if previousIsSonant

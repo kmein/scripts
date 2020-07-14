@@ -27,7 +27,9 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Lib,
+      Phonology,
+      Util
   other-modules:
       Paths_pie
   hs-source-dirs:
