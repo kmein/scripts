@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "strict": true,
+    "typeRoots": ["./src/types"]
+  },
+  "exclude": ["node_modules", "src/*.d.ts"]
+}
