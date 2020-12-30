@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>*seh₂g-</title>
+    <link
+      rel="stylesheet"
+      href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css"
+    />
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <main id="app" class="container">
+      <section class="section">
+        <div class="columns">
+          <div class="column">
+            <h1 class="title is-1">*seh₂g-</h1>
+            <div class="subtitle is-3">‘einer Fährte nachgehen’</div>
+          </div>
+          <div class="column">
+            <div class="has-text-right subtitle is-5">
+              Katalog der
+              <a
+                href="https://www.linguistik.hu-berlin.de/de/institut/professuren/historisch-vergleichende-sprachwissenschaft/studium/bibliothek"
+                >Teilbibliothek Historisch-vergleichende Sprachwissenschaft</a
+              >
+              der HU Berlin
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="searchField" class="label"
+            >Anfrage (min. 3 Zeichen)</label
+          >
+          <div class="control">
+            <input
+              type="text"
+              class="input is-fullwidth"
+              placeholder="Autor, Titel, Verlag etc."
+              id="searchField"
+              v-model="search"
+            />
+          </div>
+        </div>
+        <p class="has-text-grey has-text-right">{{results.length}} Treffer.</p>
+        <div class="content">
+          <table class="table is-hoverable">
+            <thead>
+              <th>SIG</th>
+              <th>VERF</th>
+              <th>TIT</th>
+              <th>ORT</th>
+              <th>JAHR</th>
+            </thead>
+            <tbody>
+              <tr v-for="result in results" v-html="renderBook(result)"></tr>
+            </tbody>
+          </table>
+          <div
+            class="notification has-text-centered"
+            v-if="results.length === 0"
+          >
+            <div class="container">
+              <p class="is-size-3">(Noch) keine Treffer.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="has-text-centered footer">
+      <p>
+        ek <a href="mailto:meinhaki@hu-berlin.de">keuraniz : maganharduz</a> :
+        sidonu : tawido<br />anno domini MMXX
+      </p>
+    </footer>
+  </body>
+  <script>
+    let vue = new Vue({
+      el: "#app",
+      data: {
+        books: [],
+        search: "",
+      },
+      created() {
+        fetch("Gesamtkatalog (11.03.2020).xml")
+          .then((response) => response.text())
+          .then((str) =>
+            new window.DOMParser().parseFromString(str, "text/xml")
+          )
+          .then((xml) => {
+            this.books = [...xml.getElementsByTagName("item")].map((element) =>
+              Object.fromEntries(
+                [...element.attributes].map((attribute) => [
+                  attribute.name,
+                  attribute.value,
+                ])
+              )
+            );
+          });
+      },
+      computed: {
+        results() {
+          return _.filter(this.books, this.bookMatches);
+        },
+      },
+      methods: {
+        bookMatches(book) {
+          if (this.search.length < 3) {
+            return false;
+          } else
+            return _.includes(
+              _.toLower(_.toLower(JSON.stringify(book))),
+              _.toLower(_.toLower(this.search))
+            );
+        },
+        renderBook(book) {
+          const text = `
+            <th>${book.SIG || "–"}</th>
+            <td>${book.VERF || "–"}</td>
+            <td>${book.TIT || "–"}</td>
+            <td>${book.ORT || "–"}</td>
+            <td>${book.JAHR || "–"}</td>
+          `;
+
+          const searchPattern = new RegExp(`${this.search}`, "gi");
+
+          return _.replace(text, searchPattern, (x) => `<b>${x}</b>`);
+        },
+      },
+    });
+  </script>
+</html>
