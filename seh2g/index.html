@@ -11,7 +11,6 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css"
     />
     <script src="https://unpkg.com/vue"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
@@ -106,18 +105,16 @@
       },
       computed: {
         results() {
-          return _.filter(this.books, this.bookMatches);
+          return this.books.filter(this.bookMatches);
         },
       },
       methods: {
         bookMatches(book) {
-          if (this.search.length < 3) {
-            return false;
-          } else
-            return _.includes(
-              _.toLower(_.toLower(JSON.stringify(book))),
-              _.toLower(_.toLower(this.search))
-            );
+          return this.search.length < 3
+            ? false
+            : JSON.stringify(book)
+                .toLowerCase()
+                .includes(this.search.toLowerCase());
         },
         renderBook(book) {
           const text = `
@@ -130,7 +127,7 @@
 
           const searchPattern = new RegExp(`${this.search}`, "gi");
 
-          return _.replace(text, searchPattern, (x) => `<b>${x}</b>`);
+          return text.replace(searchPattern, (x) => `<b>${x}</b>`);
         },
       },
     });
