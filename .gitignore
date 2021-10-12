@@ -3,3 +3,6 @@ __pycache__/
 .direnv/
 .envrc
 seh2g/Gesamtkatalog (11.03.2020).xml
+build
+stoepel_cache.sqlite
+result

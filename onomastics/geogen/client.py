@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""Output SVG maps of surnames.
-Powered by Christoph Stöpel's Geogen API.
-
-Usage:
-  geogen.py relative <name>... [--color=<color>]
-  geogen.py absolute <name>... [--color=<color>]
-  geogen.py (-h | --help)
-
-Options:
-  -h --help          Show this screen.
-  --color=<color>  Diagram accent colour.
-"""
-from docopt import docopt
 import pandas as pd
 import requests
 import requests_cache
@@ -90,13 +76,3 @@ def generate_map(df, key, fill_color):
   <g>{unlines(district_paths)}</g>
   <g>{unlines(state_paths)}</g>
 </svg>"""
-
-
-if __name__ == "__main__":
-    arguments = docopt(__doc__)
-    df = create_data_frame(arguments["<name>"])
-    color = arguments["--color"] or "navy"
-    if arguments["relative"]:
-        print(generate_map(df, "relative", fill_color=color))
-    elif arguments["absolute"]:
-        print(generate_map(df, "absolute", fill_color=color))
