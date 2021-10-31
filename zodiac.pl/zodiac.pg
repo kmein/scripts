@@ -1,0 +1,66 @@
+% vim: ft=prolog
+
+sign(aries       ,ruler, mars).
+sign(taurus      ,ruler, venus).
+sign(gemini      ,ruler, mercury).
+sign(cancer      ,ruler, luna).
+sign(leo         ,ruler, sol).
+sign(virgo       ,ruler, mercury).
+sign(libra       ,ruler, venus).
+sign(scorpio     ,ruler, pluto).
+sign(sagittarius ,ruler, jupiter).
+sign(capricornus ,ruler, saturn).
+sign(aquarius    ,ruler, uranus).
+sign(pisces      ,ruler, neptune).
+
+sign(aries       ,element, fire   ).
+sign(taurus      ,element, earth  ).
+sign(gemini      ,element, air    ).
+sign(cancer      ,element, water  ).
+sign(leo         ,element, fire   ).
+sign(virgo       ,element, earth  ).
+sign(libra       ,element, air    ).
+sign(scorpio     ,element, water  ).
+sign(sagittarius ,element, fire   ).
+sign(capricornus ,element, earth  ).
+sign(aquarius    ,element, air    ).
+sign(pisces      ,element, water  ).
+
+sign(aries       ,quality, cardinal).
+sign(taurus      ,quality, fixed   ).
+sign(gemini      ,quality, mutable ).
+sign(cancer      ,quality, cardinal).
+sign(leo         ,quality, fixed   ).
+sign(virgo       ,quality, mutable ).
+sign(libra       ,quality, cardinal).
+sign(scorpio     ,quality, fixed   ).
+sign(sagittarius ,quality, mutable ).
+sign(capricornus ,quality, cardinal).
+sign(aquarius    ,quality, fixed   ).
+sign(pisces      ,quality, mutable ).
+
+sign(aries       ,polarity, positive).
+sign(taurus      ,polarity, negative).
+sign(gemini      ,polarity, positive).
+sign(cancer      ,polarity, negative).
+sign(leo         ,polarity, positive).
+sign(virgo       ,polarity, negative).
+sign(libra       ,polarity, positive).
+sign(scorpio     ,polarity, negative).
+sign(sagittarius ,polarity, positive).
+sign(capricornus ,polarity, negative).
+sign(aquarius    ,polarity, positive).
+sign(pisces      ,polarity, negative).
+
+sign(aries       ,season,spring,early).
+sign(taurus      ,season,spring,mid).
+sign(gemini      ,season,spring,late).
+sign(cancer      ,season,summer,early).
+sign(leo         ,season,summer,mid).
+sign(virgo       ,season,summer,late).
+sign(libra       ,season,autumn,early).
+sign(scorpio     ,season,autumn,mid).
+sign(sagittarius ,season,autumn,late).
+sign(capricornus ,season,winter,early).
+sign(aquarius    ,season,winter,mid).
+sign(pisces      ,season,winter,late).
