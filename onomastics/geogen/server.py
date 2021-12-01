@@ -4,6 +4,18 @@ import geogen.client
 app = Flask(__name__)
 
 
+@app.route("/")
+def help():
+    return """Welcome to Kierán's surname cartographer!
+
+The following routes are available to you:
+
+- /NAME/absolute.svg    displays a map of the absolute distribution of a surname
+- /NAME/relative.svg    displays a map of the relative distribution of a surname (divided by population of a landkreis)
+- /NAME/data.csv        returns the raw data, grouped by Landkreis
+    """
+
+
 @app.route("/<name>/relative.svg")
 def relative(name):
     color = request.args.get("color") or "navy"
