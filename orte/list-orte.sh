@@ -2,7 +2,8 @@
 root=https://www.orte-in-deutschland.de
 
 extract_orte() {
-  htmlq 'a[href*="-gemeinde-"], a[href*="-ort-"]' --attribute href
+  htmlq 'a[href*="-gemeinde-"], a[href*="-ort-"]' --attribute href \
+    | sed "s#^#$root/#"
 }
 
 curl -sSL "$root/alphabetisches-ortsverzeichnis.html" \
