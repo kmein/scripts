@@ -14,8 +14,13 @@ curl -sSL "$root/alphabetisches-ortsverzeichnis.html" \
         | while read -r slug; do
             first_page="$(curl -sSL "$root/$slug")"
             echo "$first_page" | extract_orte
-            echo "$first_page" | htmlq 'a[href*="?seite="]' --attribute href | sed 's/.*seite=//' | sort -un | sed -n '1p;$p' | xargs seq 2>/dev/null | sed 's/^/?seite=/' | while read -r page; do
-              curl -sSL "$root/$slug$page" | extract_orte
-            done
+            echo "$first_page" \
+              | htmlq 'a[href*="?seite="]' --attribute href \
+              | sed 's/.*seite=//' \
+              | sort -un \
+              | sed -n '1p;$p' \
+              | xargs seq 2>/dev/null | while read -r page; do
+                  curl -sSL "$root/$slug?seite=$page" | extract_orte
+                done
           done
     done
