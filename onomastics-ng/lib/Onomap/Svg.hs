@@ -1,16 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Svg (drawMap) where
+module Onomap.Svg (drawMap, renderMap) where
 
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import Data.Text.Lazy (toStrict)
 import qualified Data.Text as Text
 import Graphics.Svg
 import Text.Printf (printf)
-import Types (Area (..), ByArea (..))
+import Onomap.Types (Area (..), ByArea (..))
 
-drawMap :: Text -> [Area t] -> ByArea t Double -> Element
+renderMap :: Text -> [Area] -> ByArea Double -> Text
+renderMap fillColor areas statistics = toStrict $ prettyText $ drawMap fillColor areas statistics
+
+drawMap :: Text -> [Area] -> ByArea Double -> Element
 drawMap fillColor areas statistics =
     doctype <> with (svg11_ content) [Version_ <<- "1.1", Width_ <<- "650", Height_ <<- "900"]
   where

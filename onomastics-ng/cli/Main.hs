@@ -5,13 +5,12 @@ module Main where
 
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
+import qualified Data.Text.IO as Text
 import Network.HTTP.Client.TLS (newTlsManager)
+import Onomap.Stoepel
+import Onomap.Svg
+import Onomap.Types
 import Options.Applicative
-import Stoepel
-import Svg
-import Types
-
-data Mode = Relative | Absolute
 
 data Options = Options
     { mode :: Mode
@@ -41,13 +40,13 @@ main = do
                 Absolute -> absoluteCount
         color = fromMaybe "black" $ fillColor options
     res <- runStoepel manager' $ do
-        case areaMode options of
-            State -> do
-                ds <- states
-                stats <- computeAreaStatistics computeFunction ds <$> stateStatistics (Just $ surname options)
-                return $ drawMap color ds stats
-            District -> do
-                ds <- districts
-                stats <- computeAreaStatistics computeFunction ds <$> districtStatistics (Just $ surname options)
-                return $ drawMap color ds stats
-    print res
+        let theName = Just $ surname options
+        ds <- case areaMode options of
+            State -> states
+            District -> districts
+        theStats <- case areaMode options of
+            State -> stateStatistics theName
+            District -> districtStatistics theName
+        let stats = computeAreaStatistics computeFunction ds theStats
+        return $ renderMap color ds stats
+    Text.putStrLn res

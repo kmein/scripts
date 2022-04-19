@@ -4,22 +4,50 @@ version:            0.1.0
 author:             Kierán Meinhardt
 maintainer:         kmein@posteo.de
 
-executable onomap
-    main-is:          Main.hs
+library
+    hs-source-dirs:   lib
+    exposed-modules:  Onomap.Stoepel
+                    , Onomap.Types
+                    , Onomap.Svg
     build-depends:    base ^>=4.14.3.0
-                    , aeson
-                    , containers
                     , http-client
-                    , http-client-tls
-                    , optparse-applicative
                     , servant
                     , servant-client
+                    , aeson
                     , svg-builder
-                    , text
                     , vector
-    other-modules:    Stoepel
-                    , Types
-                    , Svg
-    hs-source-dirs:   app
+                    , containers
+                    , text
+    default-language: Haskell2010
+    ghc-options:      -O2 -Wall -threaded
+
+executable onomap-cli
+    main-is:          Main.hs
+    build-depends:    base ^>=4.14.3.0
+                    , onomap
+                    , optparse-applicative
+                    , text
+                    , http-client-tls
+    hs-source-dirs:   cli
+    default-language: Haskell2010
+    ghc-options:      -O2 -Wall -threaded
+
+
+executable onomap-web
+    main-is:          Main.hs
+    build-depends:    base ^>=4.14.3.0
+                    , onomap
+                    , containers
+                    , aeson
+                    , blaze-markup
+                    , servant
+                    , servant-blaze
+                    , servant-server
+                    , http-client
+                    , http-client-tls
+                    , text
+                    , wai
+                    , warp
+    hs-source-dirs:   web
     default-language: Haskell2010
     ghc-options:      -O2 -Wall -threaded
