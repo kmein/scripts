@@ -9,7 +9,7 @@ library
     exposed-modules:  Onomap.Stoepel
                     , Onomap.Types
                     , Onomap.Svg
-    build-depends:    base ^>=4.14.3.0
+    build-depends:    base >=4 && <5
                     , http-client
                     , servant
                     , servant-client
@@ -23,7 +23,7 @@ library
 
 executable onomap-cli
     main-is:          Main.hs
-    build-depends:    base ^>=4.14.3.0
+    build-depends:    base >=4 && <5
                     , onomap
                     , optparse-applicative
                     , text
@@ -35,7 +35,7 @@ executable onomap-cli
 
 executable onomap-web
     main-is:          Main.hs
-    build-depends:    base ^>=4.14.3.0
+    build-depends:    base >=4 && <5
                     , onomap
                     , containers
                     , aeson
