@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Playground</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        font-family: monospace;
+        font-size: 120%;
+        font-weight: bold;
+        overflow-y: hidden;
+      }
+
+      #lemmata {
+        text-transform: uppercase;
+        list-style: none;
+        text-align: center;
+      }
+      li {
+        margin: 1rem 0;
+      }
+      a {
+        text-decoration: none;
+        color: unset;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="lemmata"></ul>
+  </body>
+  <script>
+    const ws = new WebSocket("ws://88.99.83.173:9160/");
+
+    ws.onopen = () => {
+      console.log("WebSocket Client Connected");
+    };
+
+    const lemmata = document.getElementById("lemmata");
+
+    ws.onmessage = (e) => {
+      const lemmaJson = e.data;
+      const lemma = JSON.parse(lemmaJson);
+
+      const lemmaA = document.createElement("a");
+      lemmaA.href = "https://www.woerterbuchnetz.de/DWB?lemid=" + lemma.id;
+      lemmaA.innerHTML = lemma.lemma;
+      lemmaA.target = "_blank";
+
+      const lemmaLi = document.createElement("li");
+      lemmaLi.appendChild(lemmaA);
+
+      lemmata.appendChild(lemmaLi);
+
+      const scrollElement = document.scrollingElement || document.body;
+      scrollElement.scrollTop = scrollElement.scrollHeight;
+    };
+  </script>
+</html>
