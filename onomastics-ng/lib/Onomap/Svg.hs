@@ -39,7 +39,13 @@ drawMap settings colorPalette areas statistics =
                                                 , ": "
                                                 , Text.intercalate
                                                     ", "
-                                                    (map (\(surname, statistic) -> localize (showRounded count) <> " (" <> Text.toTitle surname <> ")") statistics)
+                                                    ( map
+                                                        ( \(surname, statistic) ->
+                                                            let count = fromMaybe 0 (Map.lookup (key area) (getByArea statistic))
+                                                             in localize (showRounded count) <> " (" <> Text.toTitle surname <> ")"
+                                                        )
+                                                        statistics
+                                                    )
                                                 ]
                                         )
                                     )
@@ -52,7 +58,6 @@ drawMap settings colorPalette areas statistics =
                                                 then 0
                                                 else
                                                     count
-                                                        / fromIntegral (length statistics)
                                                         / ( case scaleToMaximum settings of
                                                                 Global -> globalMaximum
                                                                 Local -> theMaximum

@@ -3,7 +3,6 @@
 
 module Main where
 
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text.IO as Text
 import Network.HTTP.Client.TLS (newTlsManager)
