@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Onomap.Types (Area (..), AreaKind (..), ByArea (..), relativeCount, absoluteCount, computeAreaStatistics, Mode(..)) where
+module Onomap.Types (Area (..), AreaKind (..), ByArea (..), relativeCount, absoluteCount, computeAreaStatistics, Mode(..), SvgSettings(..), ScaleToMaximum(..), defaultSvgSettings, defaultColorPalette) where
 
 import Control.Arrow ((&&&))
 import Data.Aeson
@@ -19,6 +19,14 @@ import Data.Text (Text)
 import Data.Vector ((!))
 import GHC.Generics
 import Servant.API
+
+data SvgSettings = SvgSettings
+  { scaleToMaximum :: ScaleToMaximum }
+
+defaultSvgSettings :: SvgSettings
+defaultSvgSettings = SvgSettings { scaleToMaximum = Global }
+
+data ScaleToMaximum = Global | Local
 
 data Mode = Relative | Absolute
 
@@ -95,3 +103,18 @@ absoluteCount _ count = fromIntegral count
 relativeCount area count = million * (fromIntegral count / fromIntegral (population area))
   where
     million = 10 ** 6
+
+
+--  https://matplotlib.org/stable/tutorials/colors/colormaps.html
+defaultColorPalette :: [Text]
+defaultColorPalette =
+    [ "#e41a1c"
+    , "#377eb8"
+    , "#4daf4a"
+    , "#984ea3"
+    , "#ff7f00"
+    , "#ffff33"
+    , "#a65628"
+    , "#f781bf"
+    , "#999999"
+    ]

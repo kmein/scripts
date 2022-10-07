@@ -14,8 +14,8 @@ import Options.Applicative
 
 data Options = Options
     { mode :: Mode
-    , surname :: Text
-    , fillColor :: Maybe Text
+    , surnames :: [Text]
+    , colorPalette :: [Text]
     , areaMode :: AreaKind
     }
 
@@ -23,8 +23,8 @@ parseOptions :: Parser Options
 parseOptions =
     Options
         <$> flag Absolute Relative (long "relative" <> help "Relative numbers (instead of absolute)")
-        <*> strArgument (metavar "SURNAME" <> help "Surname")
-        <*> optional (strOption (long "color" <> metavar "COLOR" <> help "Color of the SVG"))
+        <*> some (strArgument (metavar "SURNAME" <> help "Surname"))
+        <*> many (strOption (long "color" <> metavar "COLOR" <> help "Color palette for the SVG"))
         <*> flag District State (long "states" <> help "Analyze by state (instead of district)")
 
 opts :: ParserInfo Options
@@ -38,15 +38,16 @@ main = do
             case mode options of
                 Relative -> relativeCount
                 Absolute -> absoluteCount
-        color = fromMaybe "black" $ fillColor options
+        colors = if null $ colorPalette options then defaultColorPalette else colorPalette options
+        svgSettings = SvgSettings{scaleToMaximum = Global}
     res <- runStoepel manager' $ do
-        let theName = Just $ surname options
+        let theNames = map Just (surnames options)
         ds <- case areaMode options of
             State -> states
             District -> districts
         theStats <- case areaMode options of
-            State -> stateStatistics theName
-            District -> districtStatistics theName
-        let stats = computeAreaStatistics computeFunction ds theStats
-        return $ renderMap color ds stats
+            State -> mapM stateStatistics theNames
+            District -> mapM districtStatistics theNames
+        let stats = map (computeAreaStatistics computeFunction ds) theStats
+        return $ renderMap svgSettings colors ds (zip (surnames options) stats)
     Text.putStrLn res
