@@ -38,7 +38,7 @@ main = do
             case mode options of
                 Relative -> relativeCount
                 Absolute -> absoluteCount
-        colors = if null $ colorPalette options then defaultColorPalette else colorPalette options
+        colors = colorPalette options ++ defaultColorPalette
         svgSettings = SvgSettings{scaleToMaximum = Global}
     res <- runStoepel manager' $ do
         let theNames = map Just (surnames options)

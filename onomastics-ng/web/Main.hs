@@ -88,9 +88,7 @@ app manager' (theDistricts, theStates) = serve onomapApi server
                 let stats = map (computeAreaStatistics computeFunction theAreas) theStats
                 return
                     Response
-                        { color = case colors of
-                            [] -> defaultColorPalette
-                            x -> x
+                        { color = colors ++ defaultColorPalette
                         , areas = theAreas
                         , statistics = zip surnames stats
                         }
