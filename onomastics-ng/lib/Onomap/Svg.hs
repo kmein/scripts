@@ -91,7 +91,7 @@ drawMap settings colorPalette areas statistics =
             )
             (zip3 [0 ..] colorPalette theMaxima)
             <> foldMap
-                ( \(index, (name, statistic), color) ->
+                ( \(index, (name, statistic)) ->
                     g_
                         []
                         ( rect_
@@ -119,6 +119,6 @@ drawMap settings colorPalette areas statistics =
                                 (toElement $ localize $ showRounded $ maximum $ getByArea statistic)
                         )
                 )
-                (zip3 [0 ..] statistics colorPalette)
+                (zip [0 ..] statistics)
             <> style_ [] "path { mix-blend-mode: multiply; }"
             <> g_ [] areaPaths
