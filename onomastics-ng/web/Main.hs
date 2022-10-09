@@ -27,14 +27,14 @@ import Servant
 import Servant.HTML.Blaze (HTML)
 import Text.Blaze (ToMarkup (..))
 
-data Response = Response {color :: [Text], areas :: [Area], statistics :: [(Text, ByArea Double)]}
+data Response = Response {color :: [Text], areas :: [Area], statistics :: [(Text, ByArea Double)], svgSettings :: SvgSettings}
     deriving (Generic)
 
 instance ToMarkup Response where
     toMarkup response =
         preEscapedToMarkup $
             renderMap
-                (SvgSettings{scaleToMaximum = Global})
+                (svgSettings response)
                 (color response)
                 (areas response)
                 (statistics response)
@@ -64,13 +64,14 @@ type OnomapApi =
         :> QueryParams "name" Text
         :> QueryParam "by" AreaKind
         :> QueryParams "color" Text
+        :> QueryParam "scale" ScaleToMaximum
         :> Get '[HTML] Response
 
 app :: Manager -> ([Area], [Area]) -> Application
 app manager' (theDistricts, theStates) = serve onomapApi server
   where
     server :: Server OnomapApi
-    server = \mode (surnames :: [Text]) maybeAreaKind colors ->
+    server = \mode (surnames :: [Text]) maybeAreaKind colors scaleTo ->
         liftIO $
             runStoepel manager' $ do
                 let areaMode = fromMaybe District maybeAreaKind
@@ -90,6 +91,7 @@ app manager' (theDistricts, theStates) = serve onomapApi server
                     Response
                         { color = colors ++ defaultColorPalette
                         , areas = theAreas
+                        , svgSettings = SvgSettings{scaleToMaximum = fromMaybe Global scaleTo}
                         , statistics = zip surnames stats
                         }
     onomapApi :: Proxy OnomapApi

@@ -16,6 +16,7 @@ data Options = Options
     , surnames :: [Text]
     , colorPalette :: [Text]
     , areaMode :: AreaKind
+    , scaleTo :: ScaleToMaximum
     }
 
 parseOptions :: Parser Options
@@ -25,6 +26,7 @@ parseOptions =
         <*> some (strArgument (metavar "SURNAME" <> help "Surname"))
         <*> many (strOption (long "color" <> metavar "COLOR" <> help "Color palette for the SVG"))
         <*> flag District State (long "states" <> help "Analyze by state (instead of district)")
+        <*> flag Global Local (long "scale-to" <> help "Scale the colors down according to the local/global maximum")
 
 opts :: ParserInfo Options
 opts = info (parseOptions <**> helper) (fullDesc <> progDesc "Map your German surname")
@@ -38,7 +40,7 @@ main = do
                 Relative -> relativeCount
                 Absolute -> absoluteCount
         colors = colorPalette options ++ defaultColorPalette
-        svgSettings = SvgSettings{scaleToMaximum = Global}
+        svgSettings = SvgSettings{scaleToMaximum = scaleTo options}
     res <- runStoepel manager' $ do
         let theNames = map Just (surnames options)
         ds <- case areaMode options of

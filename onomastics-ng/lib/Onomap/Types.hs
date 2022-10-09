@@ -28,6 +28,12 @@ defaultSvgSettings = SvgSettings { scaleToMaximum = Global }
 
 data ScaleToMaximum = Global | Local
 
+instance FromHttpApiData ScaleToMaximum where
+  parseUrlPiece = \case
+    "global" -> Right Global
+    "local" -> Right Local
+    x -> Left x
+
 data Mode = Relative | Absolute
 
 instance FromHttpApiData Mode where
