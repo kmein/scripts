@@ -1,0 +1,12 @@
+{
+  "name": "osm-restaurants",
+  "version": "1.0.0",
+  "bin": "osm-restaurants.js",
+  "author": "kmein",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.1.2",
+    "opening_hours": "^3.8.0",
+    "yargs": "^17.6.0"
+  }
+}
