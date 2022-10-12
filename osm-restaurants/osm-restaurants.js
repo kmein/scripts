@@ -36,9 +36,13 @@ const argv = yargs
     type: "number",
     default: 500,
   })
-  .option("center", {
-    alias: "c",
-    description: "The OSM ID to search around",
+  .option("latitude", {
+    description: "The latitude coordinates to search around",
+    type: "number",
+    demandOption: true,
+  })
+  .option("longitude", {
+    description: "The latitude coordinates to search around",
     type: "number",
     demandOption: true,
   })
@@ -57,10 +61,9 @@ const argv = yargs
 
 const overpassQuery = `
   [out:json];
-  node(id:${argv.center})->.center;
   (
-    node(around.center:'${argv.radius}')[amenity=fast_food];
-    node(around.center:'${argv.radius}')[amenity=restaurant];
+    node(around:${argv.radius},${argv.latitude},${argv.longitude})[amenity=fast_food];
+    node(around:${argv.radius},${argv.latitude},${argv.longitude})[amenity=restaurant];
   );
   out;
 `;
@@ -83,10 +86,11 @@ const withRestaurants = (callback) => {
   const cachePath = getCachePath(overpassQuery);
   if (
     fs.existsSync(cachePath) &&
-    new Date() - fs.statSync(cachePath).mtime > CACHE_AGE
+    new Date() - fs.statSync(cachePath).mtime < CACHE_AGE
   )
-    return JSON.parse(fs.readFileSync(cachePath));
-  else
+    callback(JSON.parse(fs.readFileSync(cachePath)));
+  else {
+    console.log("fetching");
     return axios
       .post(argv.endpoint, overpassQuery)
       .then((response) => {
@@ -95,6 +99,7 @@ const withRestaurants = (callback) => {
         callback(restaurants);
       })
       .catch(console.error);
+  }
 };
 
 withRestaurants((restaurants) => {
