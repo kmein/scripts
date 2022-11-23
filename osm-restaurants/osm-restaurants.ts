@@ -80,9 +80,10 @@ const overpassQuery = `
   out;
 `;
 
-const restaurantOpen = (restaurant: OsmNode) =>
-  "opening_hours" in restaurant.tags
-    ? new openingHours(restaurant.tags.opening_hours, {
+function restaurantOpen(restaurant: OsmNode): boolean {
+  if ("opening_hours" in restaurant.tags)
+    try {
+      return new openingHours(restaurant.tags.opening_hours, {
         lat: restaurant.lat,
         lon: restaurant.lon,
         address: {
@@ -91,8 +92,12 @@ const restaurantOpen = (restaurant: OsmNode) =>
               ? restaurant.tags["addr:country"].toLowerCase()
               : argv.country,
         },
-      }).getState()
-    : true;
+      }).getState();
+    } catch {
+      return true;
+    }
+  else return true;
+}
 
 const withRestaurants = (callback: (restaurants: OsmNode[]) => any) => {
   const cachePath = getCachePath(overpassQuery);
@@ -102,7 +107,7 @@ const withRestaurants = (callback: (restaurants: OsmNode[]) => any) => {
   )
     callback(JSON.parse(readFileSync(cachePath)));
   else {
-    console.log("fetching");
+    console.error("fetching", overpassQuery);
     return fetch(argv.endpoint, {
       method: "POST",
       body: overpassQuery,
