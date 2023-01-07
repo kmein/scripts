@@ -1,0 +1,6 @@
+[package]
+name = "rusty-jeep"
+version = "1.0.0"
+edition = "2021"
+[dependencies]
+rodio = "0.16.0"
