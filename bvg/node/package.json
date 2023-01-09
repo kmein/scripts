@@ -6,7 +6,7 @@
   "author": "Kierán Meinhardt",
   "license": "MIT",
   "dependencies": {
-    "bvg-hafas": "^1.1.0"
+    "bvg-hafas": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^11.11.3",
