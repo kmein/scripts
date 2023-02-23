@@ -7,7 +7,7 @@
     nixpkgs.follows = "rust-overlay/nixpkgs";
   };
 
-  outputs = inputs@{nixpkgs, flake-utils, ...}:
+  outputs = inputs@{self, nixpkgs, flake-utils, ...}:
     flake-utils.lib.eachDefaultSystem (system:
     let
       pkgs = import nixpkgs {
@@ -19,6 +19,22 @@
     in
     {
       packages.onomap = pkgs.haskellPackages.callCabal2nix "onomap" ./onomastics-ng {};
+      packages.alarm = pkgs.writers.writeDashBin "alarm" ''
+        set -efu
+        export PATH=${nixpkgs.lib.makeBinPath [pkgs.coreutils pkgs.bc self.packages.${system}.rusty-jeep]}
+        for i in `seq 8000 1000 10000`; do
+        echo $i 100
+        done | rusty-jeep
+        echo 'if you heard that sound, then goto sleep..^_^'
+
+        echo sleep "$@"
+        sleep "$@"
+
+        echo 'wake up!'
+        while :; do
+        echo $(echo "($(od -tu -An -N 2 /dev/urandom)%1000)+500"|bc) $(echo "($(od -tu -An -N 2 /dev/urandom)%500)+100"|bc)
+        done | rusty-jeep 1
+      '';
       packages.rusty-jeep = pkgs.rustPlatform.buildRustPackage rec {
         name = "rusty-jeep";
         version = "1.0.0";
