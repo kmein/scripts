@@ -18,6 +18,23 @@
       };
     in
     {
+      packages.bvg = let
+        env = pkgs.bundlerEnv {
+          name = "bvg-env";
+          ruby = pkgs.ruby;
+          gemfile = bvg/Gemfile;
+          lockfile = bvg/Gemfile.lock;
+          gemset = bvg/gemset.nix;
+        };
+      in pkgs.stdenv.mkDerivation {
+        name = "bvg";
+        buildInput = [env.wrappedRuby];
+        script = bvg/bvg.rb;
+        buildCommand = ''
+          install -D -m755 $script $out/bin/bvg
+          patchShebangs $out/bin/bvg
+        '';
+      };
       packages.onomap = pkgs.haskellPackages.callCabal2nix "onomap" ./onomastics-ng {};
       packages.alarm = pkgs.writers.writeDashBin "alarm" ''
         set -efu
