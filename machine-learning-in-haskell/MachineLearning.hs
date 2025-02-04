@@ -1,7 +1,11 @@
 module MachineLearning where
 
-import Control.Monad (replicateM)
+import Control.Monad (join, replicateM)
+import Debug.Trace (trace)
 import System.Random (Random, StdGen, mkStdGen, random)
+
+sigmoid :: (Floating a) => a -> a
+sigmoid x = 1 / (1 + exp (-x))
 
 randomList :: (Random a) => Int -> StdGen -> ([a], StdGen)
 randomList n gen = go n gen []
@@ -14,37 +18,37 @@ randomList n gen = go n gen []
 -- definition of a neuron
 
 data Neuron = Neuron
-  { bias :: Double,
-    activate :: Double -> Output,
+  { bias :: Float,
+    activate :: Float -> Output,
     weights :: [Weight]
   }
 
 instance Show Neuron where
-  show neuron = show (weights neuron, bias neuron)
+  show neuron = "w = " ++ show (weights neuron) ++ ", b = " ++ show (bias neuron)
 
-type Weight = Double
+type Weight = Float
 
-type Output = Double
+type Output = Float
 
-type Input = [Double]
+type Input = [Float]
 
 type TrainingData = [(Input, Output)]
 
 run :: Neuron -> Input -> Output
 run (Neuron {activate, weights, bias}) input = activate $ bias + sum (zipWith (*) weights input)
 
-modifyWeights :: [Weight -> Weight] -> Neuron -> Neuron
-modifyWeights fs neuron = neuron {weights = zipWith id fs (weights neuron)}
+modifyWeights :: [Weight] -> Neuron -> Neuron
+modifyWeights dw neuron = neuron {weights = zipWith (+) dw (weights neuron)}
 
-modifyBias :: (Weight -> Weight) -> Neuron -> Neuron
-modifyBias f neuron = neuron {bias = f (bias neuron)}
+modifyBias :: Weight -> Neuron -> Neuron
+modifyBias db neuron = neuron {bias = db + bias neuron}
 
 initializeNeuron :: Int -> Int -> Neuron
 initializeNeuron seed nWeights =
   let gen = mkStdGen seed
       (weights, gen') = randomList nWeights gen
       (bias, gen'') = random gen'
-   in Neuron {bias = bias * 5, activate = id, weights = map (* 10) weights}
+   in Neuron {bias = bias, activate = id, weights = weights}
 
 -- prerequisites for gradient descent
 
@@ -56,26 +60,38 @@ meanSquaredError xs ys = mean $ zipWith (\x y -> (x - y) ** 2) xs ys
   where
     mean xs = sum xs / fromIntegral (length xs)
 
-cost :: Neuron -> TrainingData -> Double
+cost :: Neuron -> TrainingData -> Float
 cost neuron trainingData =
   let actual = map (run neuron . fst) trainingData
       expected = map snd trainingData
    in meanSquaredError actual expected
 
+oneHotVectors :: Int -> [[Weight]]
+oneHotVectors n = [oneHot i | i <- [0 .. n - 1]]
+  where
+    oneHot index = [if j == index then epsilon else 0 | j <- [0 .. n - 1]]
+
 differential :: Neuron -> TrainingData -> Neuron
 differential neuron trainingData =
   let c = cost neuron trainingData
-      dw = (cost (modifyWeights (repeat (+ epsilon)) neuron) trainingData - c) / epsilon
-      db = (cost (modifyBias (+ epsilon) neuron) trainingData - c) / epsilon
-   in neuron
-        { weights = repeat dw,
-          bias = db
-        }
+      weightUpdates = oneHotVectors $ length $ weights neuron
+      dws =
+        map
+          ( \weightUpdate ->
+              (cost (modifyWeights weightUpdate neuron) trainingData - c) / epsilon
+          )
+          weightUpdates
+      db = (cost (modifyBias epsilon neuron) trainingData - c) / epsilon
+   in trace (show neuron ++ ", cost = " ++ show c) $
+        neuron
+          { weights = dws,
+            bias = db
+          }
 
-learn :: Double -> Neuron -> (Neuron -> Neuron)
+learn :: Float -> Neuron -> (Neuron -> Neuron)
 learn learningRate differential =
-  modifyBias (\b -> b - learningRate * bias differential)
-    . modifyWeights (map (\dw w -> w - learningRate * dw) (weights differential))
+  modifyBias (-learningRate * bias differential)
+    . modifyWeights (map (\dw -> -learningRate * dw) (weights differential))
 
 epoch :: TrainingData -> Neuron -> Neuron
 epoch trainingData neuron =
@@ -86,22 +102,27 @@ epoch trainingData neuron =
 
 -- concrete example
 
-trainingData :: TrainingData
-trainingData =
-  [ ([0], 0),
-    ([1], 2),
-    ([2], 4),
-    ([3], 6),
-    ([4], 8)
-  ]
+trainingDataAdd, trainingDataDouble, trainingDataOr, trainingDataAnd :: TrainingData
+trainingDataDouble = [([x], x * 2) | x <- [0 .. 4]]
+trainingDataAdd = [([x, y], x + y) | x <- [1 .. 10], y <- [1 .. 10]]
+trainingDataOr = [([0, 0], 0), ([1, 0], 1), ([0, 1], 1), ([1, 1], 1)]
+trainingDataAnd = [([0, 0], 0), ([1, 0], 0), ([0, 1], 0), ([1, 1], 1)]
 
-main = do
+trainDouble n =
   let neuron = initializeNeuron 69 1
-  print neuron
-  let c = cost neuron trainingData
-  print c
+   in iterate (epoch trainingDataDouble) neuron !! n
 
-  let neuron' = iterate (epoch trainingData) neuron !! 10000
+trainAdd n =
+  let neuron = initializeNeuron 69 2
+   in iterate (epoch trainingDataAdd) neuron !! n
 
-  print neuron'
-  print $ cost neuron' trainingData
+trainOr n =
+  let neuron = (initializeNeuron 69 2) {activate = sigmoid}
+   in iterate (epoch trainingDataOr) neuron !! n
+
+trainAnd n =
+  let neuron = (initializeNeuron 69 2) {activate = sigmoid}
+   in iterate (epoch trainingDataAnd) neuron !! n
+
+evaluateNeuron :: Neuron -> TrainingData -> [(Input, Output)]
+evaluateNeuron neuron = map (\(x, _) -> (x, run neuron x))
