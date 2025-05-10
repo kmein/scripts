@@ -13,6 +13,7 @@ import Data.Ord (comparing)
 import Data.Set (Set, delete, empty, fromList, insert, member, singleton, toAscList, union)
 import Data.String (IsString (..))
 import Data.Text (Text, pack, unpack)
+import Debug.Trace
 
 newtype Grammar = Grammar {strata :: [Set Constraint]}
   deriving (Eq)
@@ -42,29 +43,34 @@ data MarkDataPair = MarkDataPair
   { loserMarks :: Set Constraint,
     winnerMarks :: Set Constraint
   }
+  deriving (Show)
 
 demoteWith :: MarkDataPair -> Grammar -> Grammar
 demoteWith markDataPair grammar =
-  let highestRankedLoser = minimumBy (comparing (`rankIn` grammar)) (loserMarks markDataPair)
-   in foldr
-        ( \winner g ->
-            if (highestRankedLoser `dominates` winner) grammar
-              then g
-              else demoteBelow winner highestRankedLoser g
-        )
-        grammar
-        (winnerMarks markDataPair)
+  trace ("\nexamining " ++ show markDataPair) $
+    let highestRankedLoser = minimumBy (comparing (`rankIn` grammar)) (loserMarks markDataPair)
+     in trace ("highest ranked loser: " ++ show highestRankedLoser) $
+          foldr
+            ( \winner g ->
+                trace ("grammar: " ++ show g) $
+                if (highestRankedLoser `dominates` winner) grammar
+                  then g
+                  else demoteBelow winner highestRankedLoser g
+            )
+            grammar
+            (winnerMarks markDataPair)
 
 demoteBelow :: Constraint -> Constraint -> Grammar -> Grammar
 demoteBelow a b grammar =
-  let rankB = fromJust $ b `rankIn` grammar
-      strataWithoutA = map (delete a) (strata grammar)
-   in grammar
-        { strata =
-            case splitAt rankB strataWithoutA of
-              (before, bStratum : belowBStratum : after) -> before ++ bStratum : insert a belowBStratum : after
-              (before, [bStratum]) -> before ++ [bStratum, singleton a]
-        }
+  trace ("demoting " ++ show a ++ " below " ++ show b) $
+    let rankB = fromJust $ b `rankIn` grammar
+        strataWithoutA = map (delete a) (strata grammar)
+     in grammar
+          { strata =
+              case splitAt rankB strataWithoutA of
+                (before, bStratum : belowBStratum : after) -> before ++ bStratum : insert a belowBStratum : after
+                (before, [bStratum]) -> before ++ [bStratum, singleton a]
+          }
 
 singleStratumFrom :: [MarkDataPair] -> Grammar
 singleStratumFrom pairs = Grammar [foldr (\p g -> loserMarks p `union` winnerMarks p `union` g) empty pairs]
@@ -78,9 +84,8 @@ learnFrom pairs g = go g (cycle pairs)
             then g
             else go g' ps
 
-initialGrammar, resultGrammar :: Grammar
-initialGrammar = singleStratumFrom markData
-resultGrammar = learnFrom markData initialGrammar
+hierarchyFrom :: [MarkDataPair] -> Grammar
+hierarchyFrom = learnFrom <*> singleStratumFrom
 
 markData :: [MarkDataPair]
 markData =
@@ -88,4 +93,10 @@ markData =
     MarkDataPair {loserMarks = ["Parse-Syl"], winnerMarks = ["All-Ft-L", "All-Ft-R"]},
     MarkDataPair {loserMarks = ["All-Ft-L", "Leftmost", "Parse-Syl"], winnerMarks = ["All-Ft-R", "Rightmost"]},
     MarkDataPair {loserMarks = ["All-Ft-L", "Ft-Bin"], winnerMarks = ["Parse-Syl"]}
+  ]
+
+markData' :: [MarkDataPair]
+markData' =
+  [ MarkDataPair {loserMarks = ["Mid"], winnerMarks = ["Low"]},
+    MarkDataPair {loserMarks = ["Top", "Low"], winnerMarks = ["Mid"]}
   ]
