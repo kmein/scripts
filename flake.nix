@@ -58,7 +58,7 @@
         src = ./rusty-jeep;
         nativeBuildInputs = [pkgs.pkg-config];
         buildInputs = [pkgs.alsa-lib];
-        cargoHash = "sha256-3Zuh22qGSIhyOnwoZqpf3eio5l2q9u6XTUpiCBnAHrA=";
+        cargoHash = "sha256-L3lpWEb2y9+45jWnpWNBsYU4nNDx0reSxjw1eKYb+6A=";
         meta = with nixpkgs.lib; {
           description = "A beeping program inspired by K_belwagen";
           license = licenses.wtfpl;
