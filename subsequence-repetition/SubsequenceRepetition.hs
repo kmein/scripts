@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad (forM_)
 import Data.Char (toLower)
+import Data.List (sortOn)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 
@@ -29,7 +30,20 @@ allPairwiseComparisons :: (Eq a) => [a] -> [[([a], Int, Int)]]
 allPairwiseComparisons xs = map (\n -> pairwiseComparison (slidingWindow n xs)) [0 .. length xs]
 
 allRepetitions :: (Ord a) => [a] -> [Map.Map [a] (Set.Set Int)]
-allRepetitions xs = map (\n -> findRepetitions (slidingWindow n xs)) [0 .. length xs]
+allRepetitions xs = map (\n -> findRepetitions (slidingWindow n xs)) $ reverse [0 .. length xs]
+
+printAllRepetitions :: String -> [Map.Map String (Set.Set Int)] -> IO ()
+printAllRepetitions str substrRepetitions = do
+  putStrLn str
+  forM_ (sortOn score $ Map.toList $ Map.unions substrRepetitions) $ \(key, value) -> do
+    putStr $
+      zipWith
+        (const $ \x -> if x then '*' else ' ')
+        str
+        [i `elem` concatMap (\x -> [x .. x + length key - 1]) (Set.toList value) | i <- [0 ..]]
+    putStrLn $ "\t" ++ show key
+  where
+    score (substring, occurrences) = negate $ length substring ^ 2 * Set.size occurrences
 
 printPairwiseComparison :: [(Int, Int)] -> IO ()
 printPairwiseComparison [] = return ()
@@ -50,4 +64,6 @@ printPairwiseComparison xys =
           putChar '\n'
         putChar '\n'
 
-main = print $ allRepetitions $ map toLower " Vestr komk of ver | en ek Viðris ber |"
+main = do
+  let str = map toLower $ (" " ++) $ "nachts im dichten fichtendickicht da sind dicke fichten wichtig"
+  printAllRepetitions str (allRepetitions str)
