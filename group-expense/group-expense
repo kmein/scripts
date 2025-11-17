@@ -1,0 +1,90 @@
+#! /usr/bin/env -S guile --r7rs -q -s
+!#
+
+(use-modules (srfi srfi-1)
+             (srfi srfi-69)
+             (ice-9 pretty-print))
+
+(define (balance expenses)
+  (define (add-expense! totals expense)
+    (let* ((payer (car expense))
+           (amount (cadr expense))
+           (participants (caddr expense))
+           (num-participants (length participants))
+           (share (/ amount num-participants)))
+      ;; charge each participant
+      (for-each
+        (lambda (participant)
+          (when (not (equal? participant payer))
+            (hash-table-update! totals participant
+                                (lambda (x) (- x share))
+                                (lambda () 0))))
+        participants)
+      ;; update payer
+      (hash-table-update! totals payer
+                          (lambda (x) (+ x amount))
+                          (lambda () 0))))
+  (define totals (make-hash-table))
+  (for-each (lambda (expense)
+              (add-expense! totals expense))
+            expenses)
+  totals)
+
+; settle balances
+(define (settle balances)
+  (let ((debtors (filter (lambda (p) (< (cdr p) 0))
+                         (hash-table->alist balances)))
+        (creditors (filter (lambda (p) (> (cdr p) 0))
+                           (hash-table->alist balances))))
+    (let loop ((debtors debtors)
+               (creditors creditors)
+               (result '()))
+      (cond
+        ;; done
+        ((or (null? debtors) (null? creditors))
+         result)
+
+        (else
+          (let* ((debtor (car debtors))
+                 (creditor (car creditors))
+                 (dname (car debtor))
+                 (cname (car creditor))
+                 (damt (- (cdr debtor))) ; make positive
+                 (camt (cdr creditor))
+                 (amt (min damt camt)) ; settlement amount
+
+                 ;; updated remaining amounts
+                 (drem (- damt amt))
+                 (crem (- camt amt))
+
+                 ;; updated lists
+                 (new-debtors
+                   (if (= drem 0)
+                     (cdr debtors)
+                     (cons (cons dname (- drem))
+                           (cdr debtors))))
+
+                 (new-creditors
+                   (if (= crem 0)
+                     (cdr creditors)
+                     (cons (cons cname crem)
+                           (cdr creditors)))))
+
+            (loop new-debtors
+                  new-creditors
+                  (cons (list dname cname amt) result))))))))
+
+(define (load-expenses filename)
+  (with-input-from-file filename
+                        (lambda ()
+                          (read)))) ; read a single S-expression
+
+;; example
+(let* ((expenses-file (or (cadr (command-line))
+                          (error "Usage: group-expense <expenses-file>")))
+       (expenses (load-expenses expenses-file))
+       (expense-balance (balance expenses)))
+  (pretty-print (list
+                  (cons 'balances (hash-table->alist expense-balance))
+                  (cons 'settlement (settle expense-balance))))
+  (newline))
