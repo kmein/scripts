@@ -33,10 +33,6 @@
     },
     "root": {
       "inputs": {
-        "flake-utils": [
-          "rust-overlay",
-          "flake-utils"
-        ],
         "nixpkgs": [
           "rust-overlay",
           "nixpkgs"
