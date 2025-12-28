@@ -51,6 +51,7 @@
               '';
             };
           onomap = pkgs.haskellPackages.callCabal2nix "onomap" ./onomastics-ng { };
+          hesychius = hesychius/hesychius.txt;
           alarm = pkgs.writers.writeDashBin "alarm" ''
             set -efu
             export PATH=${
