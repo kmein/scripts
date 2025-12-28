@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 
 import sys
+import string
 import subprocess
 from functools import lru_cache
+import argparse
 
 # -------------------------
 # IPA helpers
 # -------------------------
 
-def get_ipa(word):
+def get_ipa(word, lang="en"):
     try:
         out = subprocess.check_output(
-            ["espeak-ng", "-q", "--ipa=3", word],
+            ["espeak-ng", "-v", lang, "-q", "--ipa=3", word],
             stderr=subprocess.DEVNULL,
             text=True
         )
@@ -84,7 +86,7 @@ def seriate(words, ipas):
     while unused:
         cur = path[-1]
         nxt = min(
-            unused, 
+            unused,
             key=lambda w: phonetic_distance(ipas[cur], ipas[w]) / max(len(ipas[cur]), len(ipas[w]), 1)
         )
         path.append(nxt)
@@ -96,9 +98,35 @@ def seriate(words, ipas):
 # Main
 # -------------------------
 
+
+
+def tokenize_stdin():
+    """
+    Reads stdin and returns a list of lowercase words.
+    Handles:
+      - Unicode letters (ä, ö, ü, ß, é, ñ, etc.)
+      - Ignores punctuation
+    """
+    text = sys.stdin.read()
+    tokens = text.translate(str.maketrans('', '', string.punctuation)).split()
+    return tokens
+
+
 def main():
-    words = [w.strip() for w in sys.stdin if w.strip()]
-    ipas = {w: tuple(ipa_tokenize(get_ipa(w))) for w in words}
+    parser = argparse.ArgumentParser(description="Pun-sort words by phonetic similarity")
+    parser.add_argument(
+        "--lang", "-l",
+        type=str,
+        default="en",
+        help="Language code for espeak-ng (default: en)"
+    )
+
+    args = parser.parse_args()
+    LANG = args.lang
+
+    words = tokenize_stdin()
+    words = list(dict.fromkeys(words))
+    ipas = {w: tuple(ipa_tokenize(get_ipa(w, lang=LANG))) for w in words}
 
     ordered = seriate(words, ipas)
 
