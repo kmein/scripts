@@ -2,8 +2,8 @@
   description = "All kinds of stuff";
 
   inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
-    nixpkgs.follows = "rust-overlay/nixpkgs";
   };
 
   outputs =
@@ -52,6 +52,7 @@
             };
           onomap = pkgs.haskellPackages.callCabal2nix "onomap" ./onomastics-ng { };
           hesychius = hesychius/hesychius.txt;
+          pun-sort-api = pkgs.callPackage ./pun-sort {};
           alarm = pkgs.writers.writeDashBin "alarm" ''
             set -efu
             export PATH=${

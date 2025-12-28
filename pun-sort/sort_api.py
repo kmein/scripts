@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FastAPI backend for phonetic word sorting
 Sorts words by their phonetic similarity using espeak-ng IPA transcription
@@ -6,7 +5,7 @@ Sorts words by their phonetic similarity using espeak-ng IPA transcription
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 import string
 import subprocess
 from functools import lru_cache
