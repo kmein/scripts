@@ -1,11 +1,12 @@
+#!/usr/bin/env python3
 """
 FastAPI backend for phonetic word sorting
 Sorts words by their phonetic similarity using espeak-ng IPA transcription
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List
+from fastapi.responses import HTMLResponse
+from typing import List, Dict, Any
 import string
 import subprocess
 from functools import lru_cache
@@ -24,37 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# -------------------------
-# Models
-# -------------------------
-class SortRequest(BaseModel):
-    text: str = Field(..., description="Text containing words to sort")
-    lang: str = Field("en", description="Language code for espeak-ng (e.g., 'en', 'de', 'es')")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "text": "The quick brown fox jumps over the lazy dog",
-                "lang": "en"
-            }
-        }
-
-class WordIPA(BaseModel):
-    word: str
-    ipa: str
-
-class SortResponse(BaseModel):
-    sorted_words: List[WordIPA]
-
-class IPARequest(BaseModel):
-    word: str
-    lang: str = Field("en", description="Language code for espeak-ng")
-
-class IPAResponse(BaseModel):
-    word: str
-    ipa: str
-    tokens: List[str]
 
 # -------------------------
 # IPA helpers
@@ -76,7 +46,7 @@ def get_ipa(word: str, lang: str = "en") -> str:
             status_code=500,
             detail="espeak-ng not found. Please install it: apt-get install espeak-ng"
         )
-    except Exception as e:
+    except Exception:
         return ""
 
 def ipa_tokenize(ipa: str) -> List[str]:
@@ -85,11 +55,9 @@ def ipa_tokenize(ipa: str) -> List[str]:
     i = 0
     while i < len(ipa):
         ch = ipa[i]
-        # Skip stress markers
         if ch in "ˈˌ":
             i += 1
             continue
-        # Check for diphthongs
         if i + 1 < len(ipa) and ipa[i:i+2] in {"aɪ", "aʊ", "eɪ", "oʊ", "ɔɪ"}:
             tokens.append(ipa[i:i+2])
             i += 2
@@ -139,10 +107,9 @@ def tokenize_text(text: str) -> List[str]:
     Tokenize text into words, removing punctuation.
     Handles Unicode letters (ä, ö, ü, ß, é, ñ, etc.)
     """
-    # Remove punctuation and split into words
     cleaned = text.translate(str.maketrans('', '', string.punctuation))
     tokens = cleaned.split()
-    return [word.lower() for word in tokens]
+    return tokens
 
 # -------------------------
 # Seriation algorithm
@@ -172,13 +139,198 @@ def seriate(words: List[str], ipas: dict) -> List[str]:
 # -------------------------
 # API Endpoints
 # -------------------------
-@app.get("/")
-def root():
-    """Root endpoint with API information"""
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Serve HTML interface"""
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Phonetic Word Sorter</title>
+        <style>
+            body {
+                font-family: Georgia, serif;
+                max-width: 650px;
+                margin: 40px auto;
+                padding: 0 20px;
+                line-height: 1.6;
+                color: #222;
+            }
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 0.3em;
+                font-weight: normal;
+            }
+            .subtitle {
+                color: #666;
+                margin-bottom: 2em;
+                font-style: italic;
+            }
+            label {
+                display: block;
+                margin-top: 1.5em;
+                margin-bottom: 0.3em;
+            }
+            textarea {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                font-family: inherit;
+                font-size: 1em;
+                resize: vertical;
+                min-height: 100px;
+            }
+            select {
+                padding: 6px;
+                border: 1px solid #ccc;
+                font-family: inherit;
+                font-size: 1em;
+            }
+            button {
+                margin-top: 1em;
+                padding: 8px 16px;
+                border: 1px solid #333;
+                background: white;
+                cursor: pointer;
+                font-family: inherit;
+                font-size: 1em;
+            }
+            button:hover {
+                background: #f5f5f5;
+            }
+            button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            #results {
+                margin-top: 2em;
+                padding-top: 2em;
+                border-top: 1px solid #ddd;
+            }
+            .result-header {
+                margin-bottom: 1em;
+                font-weight: normal;
+            }
+            .stats {
+                color: #666;
+                font-size: 0.9em;
+                margin-bottom: 1.5em;
+            }
+            .word-item {
+                padding: 0.5em 0;
+                border-bottom: 1px dotted #ddd;
+            }
+            .word {
+                font-weight: bold;
+            }
+            .ipa {
+                color: #666;
+                font-family: monospace;
+                margin-left: 1em;
+            }
+            .error {
+                color: #c00;
+                margin-top: 1em;
+                padding: 1em;
+                border-left: 3px solid #c00;
+                background: #fff5f5;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Phonetic Word Sorter</h1>
+        <p class="subtitle">Sort words by their phonetic similarity using IPA transcription</p>
+
+        <label for="text">Enter your text:</label>
+        <textarea id="text" placeholder="night knight kite kit bit bite byte">night knight kite kit bit bite byte</textarea>
+
+        <label for="lang">Language:</label>
+        <select id="lang">
+            <option value="en">English</option>
+            <option value="de">German</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="it">Italian</option>
+            <option value="pt">Portuguese</option>
+            <option value="nl">Dutch</option>
+            <option value="sv">Swedish</option>
+            <option value="no">Norwegian</option>
+            <option value="da">Danish</option>
+        </select>
+
+        <button id="sortBtn" onclick="sortWords()">Sort Words</button>
+
+        <div id="results"></div>
+
+        <script>
+            async function sortWords() {
+                const text = document.getElementById('text').value;
+                const lang = document.getElementById('lang').value;
+                const resultsDiv = document.getElementById('results');
+                const sortBtn = document.getElementById('sortBtn');
+
+                if (!text.trim()) {
+                    resultsDiv.innerHTML = '<div class="error">Please enter some text</div>';
+                    return;
+                }
+
+                sortBtn.disabled = true;
+                sortBtn.textContent = 'Sorting...';
+                resultsDiv.innerHTML = '<p>Processing...</p>';
+
+                try {
+                    const response = await fetch('/sort', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ text, lang })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Request failed');
+                    }
+
+                    const data = await response.json();
+
+                    let html = '<h2 class="result-header">Sorted Results</h2>';
+                    html += `<div class="stats">${data.original_count} words (${data.unique_count} unique)</div>`;
+
+                    data.sorted_words.forEach(item => {
+                        html += `<div class="word-item"><span class="word">${item.word}</span><span class="ipa">/${item.ipa}/</span></div>`;
+                    });
+
+                    resultsDiv.innerHTML = html;
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                } finally {
+                    sortBtn.disabled = false;
+                    sortBtn.textContent = 'Sort Words';
+                }
+            }
+
+            // Allow Enter key in textarea
+            document.getElementById('text').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    sortWords();
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """
+
+@app.get("/api", response_class=HTMLResponse)
+async def api_info():
+    """API information endpoint"""
     return {
         "name": "Phonetic Word Sorter API",
         "version": "1.0.0",
         "endpoints": {
+            "GET /": "Web interface",
             "POST /sort": "Sort words by phonetic similarity",
             "POST /ipa": "Get IPA transcription for a single word",
             "GET /health": "Health check"
@@ -186,10 +338,9 @@ def root():
     }
 
 @app.get("/health")
-def health_check():
+async def health_check():
     """Health check endpoint"""
     try:
-        # Test espeak-ng availability
         subprocess.run(
             ["espeak-ng", "--version"],
             capture_output=True,
@@ -199,48 +350,66 @@ def health_check():
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
-@app.post("/ipa", response_model=IPAResponse)
-def get_word_ipa(request: IPARequest):
+@app.post("/ipa")
+async def get_word_ipa(request: Request):
     """
     Get IPA transcription and tokens for a single word
+
+    Request body:
+    {
+        "word": "hello",
+        "lang": "en"
+    }
     """
-    ipa = get_ipa(request.word, request.lang)
+    data = await request.json()
+
+    word = data.get("word")
+    if not word:
+        raise HTTPException(status_code=400, detail="'word' field is required")
+
+    lang = data.get("lang", "en")
+
+    ipa = get_ipa(word, lang)
     if not ipa:
         raise HTTPException(
             status_code=400,
-            detail=f"Could not get IPA for word '{request.word}'"
+            detail=f"Could not get IPA for word '{word}'"
         )
 
     tokens = ipa_tokenize(ipa)
 
-    return IPAResponse(
-        word=request.word,
-        ipa=ipa,
-        tokens=tokens
-    )
+    return {
+        "word": word,
+        "ipa": ipa,
+        "tokens": tokens
+    }
 
-@app.post("/sort", response_model=SortResponse)
-def sort_words(request: SortRequest):
+@app.post("/sort")
+async def sort_words(request: Request):
     """
     Sort words from text by phonetic similarity
 
-    The algorithm:
-    1. Tokenizes input text into words
-    2. Gets IPA transcription for each word
-    3. Tokenizes IPA into phonemes
-    4. Uses nearest-neighbor seriation to order words by phonetic similarity
-    5. Returns ordered list with IPA transcriptions
+    Request body:
+    {
+        "text": "The quick brown fox jumps over the lazy dog",
+        "lang": "en"
+    }
     """
-    if not request.text.strip():
-        raise HTTPException(status_code=400, detail="No text provided")
+    data = await request.json()
 
-    # Tokenize text into words
-    words = tokenize_text(request.text)
+    text = data.get("text")
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="'text' field is required")
+
+    lang = data.get("lang", "en")
+
+    words = tokenize_text(text)
 
     if not words:
         raise HTTPException(status_code=400, detail="No valid words found in text")
 
-    # Remove duplicates while preserving order
+    original_count = len(words)
+
     seen = set()
     unique_words = []
     for word in words:
@@ -248,17 +417,14 @@ def sort_words(request: SortRequest):
             seen.add(word)
             unique_words.append(word)
 
-    # Get IPA for all words
     ipas = {}
     for word in unique_words:
-        ipa = get_ipa(word, request.lang)
+        ipa = get_ipa(word, lang)
         if ipa:
             ipas[word] = tuple(ipa_tokenize(ipa))
         else:
-            # If IPA fails, use empty tuple
             ipas[word] = tuple()
 
-    # Filter out words with no IPA
     valid_words = [w for w in unique_words if ipas[w]]
 
     if not valid_words:
@@ -267,20 +433,22 @@ def sort_words(request: SortRequest):
             detail="Could not get IPA transcription for any words"
         )
 
-    # Sort by phonetic similarity
     ordered = seriate(valid_words, ipas)
 
-    # Build response
     sorted_words = [
-        WordIPA(word=w, ipa="".join(ipas[w]))
+        {"word": w, "ipa": "".join(ipas[w])}
         for w in ordered
     ]
 
-    return SortResponse(
-        sorted_words=sorted_words,
-    )
+    return {
+        "sorted_words": sorted_words,
+        "original_count": original_count,
+        "unique_count": len(unique_words)
+    }
 
 if __name__ == "__main__":
     import uvicorn
     import os
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
