@@ -3,24 +3,23 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    rust-overlay.url = "github:oxalica/rust-overlay";
-    rust-overlay.inputs.nixpkgs.follows = "nixpkgs";
+    naersk.url = "github:nix-community/naersk";
+    naersk.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
     {
       self,
       nixpkgs,
-      rust-overlay,
+      naersk,
     }:
     let
       pkgsFor =
         system:
         import nixpkgs {
           inherit system;
-          overlays = [
-            rust-overlay.overlays.default
-          ];
+          overlays = [];
+          config = {};
         };
       lib = nixpkgs.lib;
       eachSupportedSystem = lib.genAttrs lib.systems.flakeExposed;
@@ -30,6 +29,7 @@
         system:
         let
           pkgs = pkgsFor system;
+          naersk' = pkgs.callPackage naersk {};
         in
         {
           bvg =
@@ -76,7 +76,7 @@
             echo $(echo "($(od -tu -An -N 2 /dev/urandom)%1000)+500"|bc) $(echo "($(od -tu -An -N 2 /dev/urandom)%500)+100"|bc)
             done | rusty-jeep 1
           '';
-          rusty-jeep = pkgs.rustPlatform.buildRustPackage rec {
+          rusty-jeep = naersk'.buildPackage {
             name = "rusty-jeep";
             version = "1.0.0";
             src = ./rusty-jeep;
