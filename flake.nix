@@ -4,12 +4,15 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     naersk.url = "github:nix-community/naersk";
+    fenix.url = "github:nix-community/fenix";
     naersk.inputs.nixpkgs.follows = "nixpkgs";
+    naersk.inputs.fenix.follows = "fenix";
   };
 
   outputs =
     {
       self,
+      fenix,
       nixpkgs,
       naersk,
     }:
